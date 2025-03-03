@@ -1,4 +1,4 @@
-import {
+  import {
   createBrowserRouter,
   createRoutesFromElements,
   Route,
@@ -12,7 +12,8 @@ import Recipes from "./pages/Recipes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProductDetail from "./pages/ProductDetail";
 import Home from "./pages/Home";
-
+import QuotesPage from './pages/QuotesPage';
+import TodosPage from './pages/TodosPage';
 const queryClient = new QueryClient();
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
         <Route path="recipes" element={<Recipes />} />
         <Route path="posts" element={<Post />} />
         <Route path="carts" element={<Carts />} />
+        <Route path="/quotes" element={<QuotesPage />} />
+        <Route path="/todos" element={<TodosPage />} />
       </Route>
     )
   );
