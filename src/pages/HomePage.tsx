@@ -2,59 +2,73 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const HomePage: React.FC = () => {
-  const crudModules = [
-    {
-      title: 'Posts',
-      description: 'Manage blog posts with title, content, and tags',
-      path: '/posts',
-      icon: '📝',
-    },
-    {
-      title: 'Recipes',
-      description: 'Create and manage cooking recipes with ingredients and instructions',
-      path: '/recipes',
-      icon: '🍳',
-    },
-    {
-      title: 'Quotes',
-      description: 'Collect inspiring quotes from famous authors',
-      path: '/Comments',
-      icon: '💬',
-    },
-    {
-      title: 'Todos',
-      description: 'Keep track of your tasks and mark them as completed',
-      path: '/TodosPage',
-      icon: '✅',
-    },
-  ];
-
   return (
-    <div className="py-6">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold mb-4">CRUD Operations Demo</h1>
-        <p className="text-xl text-gray-600">
-          A demonstration of CRUD operations using DummyJSON API
+    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1 style={{ fontSize: '36px', color: '#2c3e50', textAlign: 'center', marginBottom: '40px' }}>Web 2 TI-A 2025 Hands-on Project</h1>
+      
+      <div style={{ 
+        backgroundColor: '#f8f9fa', 
+        padding: '30px', 
+        borderRadius: '10px', 
+        boxShadow: '0 2px 15px rgba(0, 0, 0, 0.1)', 
+        marginBottom: '30px' 
+      }}>
+        <p style={{ fontSize: '18px', lineHeight: 1.6, color: '#34495e', marginBottom: '20px' }}>
+          Welcome to this demo application built with React and TypeScript. This project demonstrates 
+          fetching and displaying data from external APIs, as well as managing component state.
+        </p>
+        <p style={{ fontSize: '18px', lineHeight: 1.6, color: '#34495e', marginBottom: '20px' }}>
+          Use the navigation links below to explore different sections of the application:
         </p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {crudModules.map((module) => (
-          <Link
-            key={module.path}
-            to={module.path}
-            className="block p-6 border rounded-lg shadow-sm hover:shadow-md transition-shadow bg-white"
-          >
-            <div className="flex items-center">
-              <div className="text-4xl mr-4">{module.icon}</div>
-              <div>
-                <h2 className="text-2xl font-bold">{module.title}</h2>
-                <p className="text-gray-600">{module.description}</p>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+      
+      <nav style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '50px' }}>
+        <Link 
+          to="/todos" 
+          style={{ 
+            backgroundColor: '#3498db', 
+            color: 'white', 
+            textDecoration: 'none', 
+            padding: '15px 25px', 
+            borderRadius: '8px', 
+            fontSize: '18px', 
+            fontWeight: 'bold', 
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' 
+          }}
+        >
+          Todos
+        </Link>
+        <Link 
+          to="/comments" 
+          style={{ 
+            backgroundColor: '#9b59b6', 
+            color: 'white', 
+            textDecoration: 'none', 
+            padding: '15px 25px', 
+            borderRadius: '8px', 
+            fontSize: '18px', 
+            fontWeight: 'bold', 
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' 
+          }}
+        >
+          Comments
+        </Link>
+        <Link 
+          to="/recipes" 
+          style={{ 
+            backgroundColor: '#27ae60', 
+            color: 'white', 
+            textDecoration: 'none', 
+            padding: '15px 25px', 
+            borderRadius: '8px', 
+            fontSize: '18px', 
+            fontWeight: 'bold', 
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)' 
+          }}
+        >
+          Recipes
+        </Link>
+      </nav>
     </div>
   );
 };
