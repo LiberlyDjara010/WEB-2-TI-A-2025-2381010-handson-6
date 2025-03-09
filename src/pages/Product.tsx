@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "../utils/Axiosinstance";
+import axios from "../utils/AxiosInstance";
 import { useNavigate } from "react-router-dom";
 
 interface Product {
