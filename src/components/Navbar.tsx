@@ -16,7 +16,7 @@ const navigation = [
   { name: "Carts", to: "/carts", current: false },
   { name: "Post", to: "/posts", current: false },
   { name: "Todos", to: "/TodosPage", current: false },
-  { name: "Quotes", to: "/QuoesPage", current: false },
+  { name: "Comments", to: "/Comments", current: false },
 ];
 
 function classNames(...classes: string[]) {
