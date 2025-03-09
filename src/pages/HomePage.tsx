@@ -18,7 +18,7 @@ const HomePage: React.FC = () => {
     {
       title: 'Quotes',
       description: 'Collect inspiring quotes from famous authors',
-      path: '/QuotesPage',
+      path: '/Comments',
       icon: '💬',
     },
     {

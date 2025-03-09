@@ -11,17 +11,22 @@ import Recipes from "./pages/Recipes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProductDetail from "./pages/ProductDetail";
 import Home from "./pages/HomePage";
+import Comments from "./pages/Comments";
+import Todos from "./pages/Todos";
+import HomePage from "./pages/HomePage";
 const queryClient = new QueryClient();
 
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path="/" element={<RootLayout />}>
-        <Route index element={<Home />} />
+        <Route index element={<HomePage />} />
         <Route path="product" element={<Product />} />
         <Route path="product/:id" element={<ProductDetail />} />
         <Route path="recipes" element={<Recipes />} />
         <Route path="posts" element={<Post />} />
+        <Route path="comments" element={<Comments />} />
+        <Route path="todos" element={<Todos />} />
       </Route>
     )
   );
