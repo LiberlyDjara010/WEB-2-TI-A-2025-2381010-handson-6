@@ -1,214 +1,347 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Comment {
   id: number;
-  postId: number;
-  name: string;
-  email: string;
   body: string;
+  postId: number;
+  user: {
+    id: number;
+    username: string;
+  };
+}
+
+interface CommentsResponse {
+  comments: Comment[];
+  total: number;
+  skip: number;
+  limit: number;
 }
 
 const Comments: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [newComment, setNewComment] = useState<{name: string; email: string; body: string}>({
-    name: '',
-    email: '',
-    body: ''
-  });
+  const [newCommentBody, setNewCommentBody] = useState<string>('');
+  const [newCommentPostId, setNewCommentPostId] = useState<string>('1');
+  const [editingComment, setEditingComment] = useState<Comment | null>(null);
+  const [editCommentBody, setEditCommentBody] = useState<string>('');
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/comments')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch comments');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setComments(data.slice(0, 10)); // Limiting to first 10 comments for better display
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
+    fetchComments();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNewComment({
-      ...newComment,
-      [name]: value
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newComment.name || !newComment.email || !newComment.body) {
-      alert('Please fill all fields');
-      return;
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('https://dummyjson.com/comments');
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+      }
+      const data: CommentsResponse = await response.json();
+      setComments(data.comments);
+      setLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setLoading(false);
     }
-    
-    const commentToAdd: Comment = {
-      id: comments.length ? Math.max(...comments.map(comment => comment.id)) + 1 : 1,
-      postId: 1, // Default postId
-      ...newComment
-    };
-    
-    setComments([commentToAdd, ...comments]);
-    setNewComment({ name: '', email: '', body: '' });
   };
 
-  const deleteComment = (id: number) => {
-    setComments(comments.filter(comment => comment.id !== id));
-  };
-
-  if (loading) return <div style={{ textAlign: 'center', padding: '20px', fontSize: '18px', color: '#7f8c8d' }}>Loading comments...</div>;
-  if (error) return <div style={{ textAlign: 'center', padding: '20px', fontSize: '18px', color: '#e74c3c' }}>Error: {error}</div>;
-
-  return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ marginBottom: '25px', textAlign: 'center', borderBottom: '2px solid #9b59b6', paddingBottom: '15px' }}>
-        <h1 style={{ fontSize: '28px', color: '#2c3e50', margin: 0 }}>Discussion</h1>
-      </div>
+  const addComment = async () => {
+    if (!newCommentBody.trim()) return;
+    
+    try {
+      const postId = parseInt(newCommentPostId) || 1;
       
-      <form 
-        style={{ 
-          backgroundColor: '#f9f9f9', 
-          padding: '20px', 
-          borderRadius: '8px', 
-          marginBottom: '30px', 
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' 
-        }} 
-        onSubmit={handleSubmit}
-      >
-        <div style={{ marginBottom: '15px' }}>
-          <label 
-            style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#34495e' }} 
-            htmlFor="name"
-          >
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '16px' }}
-            value={newComment.name}
-            onChange={handleInputChange}
-            placeholder="Your Name"
-            required
-          />
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label 
-            style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#34495e' }} 
-            htmlFor="email"
-          >
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '16px' }}
-            value={newComment.email}
-            onChange={handleInputChange}
-            placeholder="your.email@example.com"
-            required
-          />
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label 
-            style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#34495e' }} 
-            htmlFor="body"
-          >
-            Comment
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            style={{ 
-              width: '100%', 
-              padding: '10px', 
-              border: '1px solid #ddd', 
-              borderRadius: '4px', 
-              minHeight: '100px', 
-              fontSize: '16px', 
-              resize: 'vertical' 
-            }}
-            value={newComment.body}
-            onChange={handleInputChange}
-            placeholder="Share your thoughts..."
-            required
-          />
-        </div>
-        
+      const response = await fetch('https://dummyjson.com/comments/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          body: newCommentBody,
+          postId: postId,
+          userId: 1, // Default user ID
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add comment');
+      }
+      
+      const newComment: Comment = await response.json();
+      
+      // In a real app, you would use the returned comment
+      // For DummyJSON which doesn't actually add to a database,
+      // we'll simulate adding it to our local state
+      setComments([...comments, {
+        ...newComment,
+        id: Math.max(...comments.map(c => c.id), 0) + 1,
+        user: { id: 1, username: 'currentuser' } // Mock user data
+      }]);
+      
+      setNewCommentBody('');
+      setNewCommentPostId('1');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add comment');
+    }
+  };
+
+  const deleteComment = async (id: number) => {
+    try {
+      const response = await fetch(`https://dummyjson.com/comments/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete comment');
+      }
+      
+      // In a real app, you would remove the comment based on API response
+      // For DummyJSON, we'll simulate deletion in our local state
+      setComments(comments.filter(comment => comment.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete comment');
+    }
+  };
+
+  const startEditing = (comment: Comment) => {
+    setEditingComment(comment);
+    setEditCommentBody(comment.body);
+  };
+
+  const cancelEditing = () => {
+    setEditingComment(null);
+    setEditCommentBody('');
+  };
+
+  const saveCommentEdit = async () => {
+    if (!editingComment || !editCommentBody.trim()) return;
+    
+    try {
+      const response = await fetch(`https://dummyjson.com/comments/${editingComment.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          body: editCommentBody,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update comment');
+      }
+      
+      // Update local state
+      setComments(comments.map(c => 
+        c.id === editingComment.id ? { ...c, body: editCommentBody } : c
+      ));
+      
+      setEditingComment(null);
+      setEditCommentBody('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update comment');
+    }
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>Loading comments...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ color: 'red', padding: '20px' }}>
+        Error: {error}
         <button 
-          type="submit" 
-          style={{ 
-            backgroundColor: '#9b59b6', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            padding: '12px 20px', 
-            fontSize: '16px', 
-            cursor: 'pointer', 
-            fontWeight: 'bold', 
-            display: 'block', 
-            width: '100%' 
+          onClick={() => { setError(null); fetchComments(); }}
+          style={{
+            marginLeft: '10px',
+            padding: '5px 10px',
+            backgroundColor: '#f0f0f0',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            cursor: 'pointer'
           }}
         >
-          Post Comment
+          Retry
         </button>
-      </form>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      <h2 style={{ color: '#333', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>Comments</h2>
       
-      <ul style={{ listStyleType: 'none', padding: 0 }}>
-        {comments.map(comment => (
-          <li 
-            key={comment.id} 
+      {/* Add Comment Form */}
+      <div style={{ 
+        display: 'flex',
+        flexDirection: 'column',
+        marginBottom: '20px',
+        gap: '10px',
+        padding: '15px',
+        backgroundColor: '#f9f9f9',
+        borderRadius: '5px'
+      }}>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>Add New Comment</h3>
+        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <label style={{ width: '80px' }}>Post ID:</label>
+          <input
+            type="number"
+            value={newCommentPostId}
+            onChange={(e) => setNewCommentPostId(e.target.value)}
+            min="1"
+            style={{
+              width: '80px',
+              padding: '8px',
+              border: '1px solid #ddd',
+              borderRadius: '4px'
+            }}
+          />
+        </div>
+        
+        <textarea
+          value={newCommentBody}
+          onChange={(e) => setNewCommentBody(e.target.value)}
+          placeholder="Write your comment..."
+          rows={3}
+          style={{
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            resize: 'vertical'
+          }}
+        />
+        
+        <button
+          onClick={addComment}
+          style={{
+            padding: '10px 15px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            alignSelf: 'flex-end'
+          }}
+        >
+          Add Comment
+        </button>
+      </div>
+      
+      {/* Comments List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        {comments.map((comment) => (
+          <div 
+            key={comment.id}
             style={{ 
-              backgroundColor: 'white', 
-              borderRadius: '8px', 
-              padding: '20px', 
-              marginBottom: '20px', 
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', 
-              position: 'relative', 
-              borderLeft: '5px solid #9b59b6' 
+              padding: '15px', 
+              backgroundColor: '#f9f9f9',
+              border: '1px solid #ddd',
+              borderRadius: '5px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-              <div>
-                <h3 style={{ fontWeight: 'bold', color: '#2c3e50', fontSize: '18px', margin: 0 }}>{comment.name}</h3>
-                <p style={{ color: '#7f8c8d', fontSize: '14px', margin: '5px 0 0' }}>{comment.email}</p>
+            {editingComment && editingComment.id === comment.id ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <textarea
+                  value={editCommentBody}
+                  onChange={(e) => setEditCommentBody(e.target.value)}
+                  rows={3}
+                  style={{
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    resize: 'vertical'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={saveCommentEdit}
+                    style={{
+                      padding: '5px 10px',
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={cancelEditing}
+                    style={{
+                      padding: '5px 10px',
+                      backgroundColor: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <button 
-                style={{ 
-                  backgroundColor: '#e74c3c', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '4px', 
-                  padding: '5px 10px', 
-                  cursor: 'pointer', 
-                  fontSize: '14px' 
-                }}
-                onClick={() => deleteComment(comment.id)}
-              >
-                Delete
-              </button>
-            </div>
-            <p style={{ color: '#34495e', lineHeight: 1.6, marginTop: '10px' }}>{comment.body}</p>
-          </li>
+            ) : (
+              <>
+                <div style={{ 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '8px'
+                }}>
+                  <div style={{ 
+                    fontWeight: 'bold', 
+                    color: '#555'
+                  }}>
+                    @{comment.user.username}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => startEditing(comment)}
+                      style={{
+                        padding: '5px 10px',
+                        backgroundColor: '#2196F3',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteComment(comment.id)}
+                      style={{
+                        padding: '5px 10px',
+                        backgroundColor: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <p style={{ 
+                  margin: 0,
+                  color: '#333',
+                  lineHeight: '1.5'
+                }}>
+                  {comment.body}
+                </p>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#888',
+                  marginTop: '10px'
+                }}>
+                  Post ID: {comment.postId}
+                </div>
+              </>
+            )}
+          </div>
         ))}
-      </ul>
-      
-      <div style={{ textAlign: 'right', marginTop: '20px', color: '#7f8c8d', fontStyle: 'italic' }}>
-        {comments.length} comments
       </div>
     </div>
   );

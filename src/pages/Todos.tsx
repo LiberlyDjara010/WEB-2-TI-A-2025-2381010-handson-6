@@ -1,146 +1,326 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Todo {
   id: number;
-  title: string;
+  todo: string;
   completed: boolean;
   userId: number;
+}
+
+interface TodosResponse {
+  todos: Todo[];
+  total: number;
+  skip: number;
+  limit: number;
 }
 
 const Todos: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [newTodo, setNewTodo] = useState<string>('');
+  const [newTodoText, setNewTodoText] = useState<string>('');
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [editText, setEditText] = useState<string>('');
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/todos')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch todos');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setTodos(data.slice(0, 10)); // Limiting to first 10 todos for better performance
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
+    fetchTodos();
   }, []);
 
-  const handleAddTodo = () => {
-    if (newTodo.trim() === '') return;
+  const fetchTodos = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('https://dummyjson.com/todos');
+      if (!response.ok) {
+        throw new Error('Failed to fetch todos');
+      }
+      const data: TodosResponse = await response.json();
+      setTodos(data.todos);
+      setLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setLoading(false);
+    }
+  };
+
+  const addTodo = async () => {
+    if (!newTodoText.trim()) return;
     
-    const newTodoItem: Todo = {
-      id: todos.length ? Math.max(...todos.map(todo => todo.id)) + 1 : 1,
-      title: newTodo,
-      completed: false,
-      userId: 1, // Default userId
-    };
-    
-    setTodos([...todos, newTodoItem]);
-    setNewTodo('');
-  };
-
-  const toggleComplete = (id: number) => {
-    setTodos(
-      todos.map(todo => 
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
-  };
-
-  const deleteTodo = (id: number) => {
-    setTodos(todos.filter(todo => todo.id !== id));
-  };
-
-  if (loading) return <div style={{ textAlign: 'center', padding: '20px', fontSize: '18px', color: '#7f8c8d' }}>Loading todos...</div>;
-  if (error) return <div style={{ textAlign: 'center', padding: '20px', fontSize: '18px', color: '#e74c3c' }}>Error: {error}</div>;
-
-  return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '2px solid #3498db', paddingBottom: '10px' }}>
-        <h1 style={{ fontSize: '28px', color: '#2c3e50', margin: 0 }}>My Todo List</h1>
-      </div>
+    try {
+      const response = await fetch('https://dummyjson.com/todos/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          todo: newTodoText,
+          completed: false,
+          userId: 1, // Default user ID
+        }),
+      });
       
-      <div style={{ display: 'flex', marginBottom: '20px', gap: '10px' }}>
-        <input
-          type="text"
-          style={{ flexGrow: 1, padding: '10px 15px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '16px' }}
-          placeholder="Add a new todo..."
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleAddTodo()}
-        />
+      if (!response.ok) {
+        throw new Error('Failed to add todo');
+      }
+      
+      const newTodo: Todo = await response.json();
+      
+      // In a real app, you would use the returned todo
+      // For DummyJSON which doesn't actually add to a database,
+      // we'll simulate adding it to our local state
+      setTodos([...todos, {
+        ...newTodo,
+        id: Math.max(...todos.map(t => t.id), 0) + 1
+      }]);
+      setNewTodoText('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add todo');
+    }
+  };
+
+  const deleteTodo = async (id: number) => {
+    try {
+      const response = await fetch(`https://dummyjson.com/todos/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete todo');
+      }
+      
+      // In a real app, you would remove the todo based on API response
+      // For DummyJSON, we'll simulate deletion in our local state
+      setTodos(todos.filter(todo => todo.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete todo');
+    }
+  };
+
+  const updateTodoStatus = async (todo: Todo) => {
+    try {
+      const response = await fetch(`https://dummyjson.com/todos/${todo.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          completed: !todo.completed,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update todo status');
+      }
+      
+      // Update local state
+      setTodos(todos.map(t => 
+        t.id === todo.id ? { ...t, completed: !t.completed } : t
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update todo status');
+    }
+  };
+
+  const startEditing = (todo: Todo) => {
+    setEditingTodo(todo);
+    setEditText(todo.todo);
+  };
+
+  const cancelEditing = () => {
+    setEditingTodo(null);
+    setEditText('');
+  };
+
+  const saveTodoEdit = async () => {
+    if (!editingTodo || !editText.trim()) return;
+    
+    try {
+      const response = await fetch(`https://dummyjson.com/todos/${editingTodo.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          todo: editText,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update todo');
+      }
+      
+      // Update local state
+      setTodos(todos.map(t => 
+        t.id === editingTodo.id ? { ...t, todo: editText } : t
+      ));
+      
+      setEditingTodo(null);
+      setEditText('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update todo');
+    }
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>Loading todos...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ color: 'red', padding: '20px' }}>
+        Error: {error}
         <button 
-          style={{ 
-            backgroundColor: '#3498db', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            padding: '10px 15px', 
-            cursor: 'pointer', 
-            fontWeight: 'bold' 
-          }} 
-          onClick={handleAddTodo}
+          onClick={() => { setError(null); fetchTodos(); }}
+          style={{
+            marginLeft: '10px',
+            padding: '5px 10px',
+            backgroundColor: '#f0f0f0',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
         >
-          Add Todo
+          Retry
         </button>
       </div>
+    );
+  }
 
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+      <h2 style={{ color: '#333', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>Todos</h2>
+      
+      {/* Add Todo Form */}
+      <div style={{ 
+        display: 'flex', 
+        marginBottom: '20px',
+        gap: '10px' 
+      }}>
+        <input
+          type="text"
+          value={newTodoText}
+          onChange={(e) => setNewTodoText(e.target.value)}
+          placeholder="Add a new todo..."
+          style={{
+            flex: 1,
+            padding: '10px',
+            border: '1px solid #ddd',
+            borderRadius: '4px'
+          }}
+        />
+        <button
+          onClick={addTodo}
+          style={{
+            padding: '10px 15px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Add
+        </button>
+      </div>
+      
+      {/* Todo List */}
       <ul style={{ listStyleType: 'none', padding: 0 }}>
-        {todos.map(todo => (
+        {todos.map((todo) => (
           <li 
-            key={todo.id} 
+            key={todo.id}
             style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
               padding: '15px', 
-              borderRadius: '4px', 
-              marginBottom: '10px', 
-              backgroundColor: todo.completed ? '#f0f7f4' : '#f8f9fa', 
-              borderLeft: `5px solid ${todo.completed ? '#27ae60' : '#3498db'}`,
-              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)'
+              margin: '10px 0', 
+              backgroundColor: todo.completed ? '#e6ffe6' : '#fff',
+              border: '1px solid #ddd',
+              borderRadius: '5px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
             }}
           >
-            <input
-              type="checkbox"
-              style={{ marginRight: '15px', height: '20px', width: '20px', cursor: 'pointer' }}
-              checked={todo.completed}
-              onChange={() => toggleComplete(todo.id)}
-            />
-            <span style={{ 
-              flexGrow: 1, 
-              fontSize: '18px', 
-              color: todo.completed ? '#7f8c8d' : '#34495e',
-              textDecoration: todo.completed ? 'line-through' : 'none'
-            }}>
-              {todo.title}
-            </span>
-            <button 
-              style={{ 
-                backgroundColor: '#e74c3c', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                padding: '5px 10px', 
-                cursor: 'pointer', 
-                fontWeight: 'bold' 
-              }}
-              onClick={() => deleteTodo(todo.id)}
-            >
-              Delete
-            </button>
+            {editingTodo && editingTodo.id === todo.id ? (
+              <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '10px' }}>
+                <input 
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                />
+                <button
+                  onClick={saveTodoEdit}
+                  style={{
+                    padding: '5px 10px',
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={cancelEditing}
+                  style={{
+                    padding: '5px 10px',
+                    backgroundColor: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                  <input 
+                    type="checkbox" 
+                    checked={todo.completed} 
+                    onChange={() => updateTodoStatus(todo)} 
+                    style={{ marginRight: '15px', cursor: 'pointer' }}
+                  />
+                  <span style={{ 
+                    textDecoration: todo.completed ? 'line-through' : 'none',
+                    color: todo.completed ? '#666' : '#333'
+                  }}>
+                    {todo.todo}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={() => startEditing(todo)}
+                    style={{
+                      padding: '5px 10px',
+                      backgroundColor: '#2196F3',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => deleteTodo(todo.id)}
+                    style={{
+                      padding: '5px 10px',
+                      backgroundColor: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>
-      
-      <div style={{ marginTop: '20px', textAlign: 'right', color: '#7f8c8d', fontStyle: 'italic' }}>
-        {todos.length} todos • {todos.filter(todo => todo.completed).length} completed
-      </div>
     </div>
   );
 };
